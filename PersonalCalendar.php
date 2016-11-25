@@ -22,7 +22,350 @@ class PersonalCalendar{
 	const HEBREW_MONTH_AV    = "12";
 	const HEBREW_MONTH_ELUL  = "13";
 	
-
+	static private $allRemoteHebCalData = array();  // data from the http://hebcal.com API.
+	
+	private static function getHavdalahtimeByDate( &$date_parm ){
+		$year_parm = substr($date_parm, 0, 4 );
+		
+		$tmp_hebcal_data_all_years = PersonalCalendar::getAllRemoteHebCalData($year_parm);
+		
+		
+		
+		if( isset( $tmp_hebcal_data_all_years[$year_parm] ) ){
+			$tmp_hebcal_data = $tmp_hebcal_data_all_years[$year_parm];
+			//CRM_Core_Error::debug($year_parm." Heb data: ", $tmp_hebcal_data );
+			foreach( $tmp_hebcal_data as $cur ){
+		
+				$hebcal_date_tmp = substr($cur->date, 0, 10);
+		
+				if( $cur->category == "havdalah" &&  $hebcal_date_tmp == $date_parm ){
+		
+					$time_raw_str = substr($cur->date, 11, 5 ) ;
+					$time_arr = explode(":", $time_raw_str);
+						
+					$hour_24_style = $time_arr[0];
+					$min_str = $time_arr[1];
+						
+					$hour_pretty = $hour_24_style - 12;
+					$time_pretty = $hour_pretty.":".$min_str."pm";
+		
+					return $time_pretty;
+		
+				}else{
+					// keep looking.
+				}
+			}
+		}
+	}
+	
+	private static function getOmerByDate( &$date_parm ){
+	
+		// {"hebrew":"?? ?????","category":"omer","date":"2016-05-03","title":"10th day of the Omer"}
+		// TODO: Get day of the Omer to display on front-facing calendar.
+		
+	}
+	
+	private static function getCandletimeByDate( &$date_parm ){
+		/* Example from HebCal API result:
+		 * "category": "candles",
+        "title": "Candle lighting: 5:04 pm",
+        "date": "2015-05-22T17:04:00-03:00"
+		 */
+		$year_parm = substr($date_parm, 0, 4 );
+		
+		$tmp_hebcal_data_all_years = PersonalCalendar::getAllRemoteHebCalData($year_parm);
+		
+		
+		
+		if( isset( $tmp_hebcal_data_all_years[$year_parm] ) ){
+			$tmp_hebcal_data = $tmp_hebcal_data_all_years[$year_parm];
+			//CRM_Core_Error::debug($year_parm." Heb data: ", $tmp_hebcal_data );
+			foreach( $tmp_hebcal_data as $cur ){
+				
+				$hebcal_date_tmp = substr($cur->date, 0, 10);
+				
+				if( $cur->category == "candles" &&  $hebcal_date_tmp == $date_parm ){
+		
+					$time_raw_str = substr($cur->date, 11, 5 ) ;
+					$time_arr = explode(":", $time_raw_str);
+					
+					$hour_24_style = $time_arr[0];
+					$min_str = $time_arr[1];
+					
+					$hour_pretty = $hour_24_style - 12;
+					$time_pretty = $hour_pretty.":".$min_str."pm";
+		
+					return $time_pretty;
+		
+				}else{
+					// keep looking.
+				}
+			}
+		}
+		
+		
+		
+		
+	}
+	
+	private static function getHolidayByDate( &$date_parm){
+	
+		// date returned from HebCal API will include time information when candlelighting parm = on. 
+		
+	
+		$year_parm = substr($date_parm, 0, 4 );
+		$tmp_hebcal_data_all_years = PersonalCalendar::getAllRemoteHebCalData($year_parm);
+	
+		if( isset( $tmp_hebcal_data_all_years[$year_parm] ) ){
+			$tmp_hebcal_data = $tmp_hebcal_data_all_years[$year_parm];
+			
+			foreach( $tmp_hebcal_data as $cur ){
+				$hebcal_date_tmp = substr($cur->date, 0, 10);
+				
+				if( $cur->category == "holiday" &&  $hebcal_date_tmp == $date_parm ){
+	
+					$holiday_title = $cur->title;
+					$holiday_date = $cur->date;
+	
+					// if Chanukah, remove candle times from title. example of raw title: "Chanukah: 6 Candles: 6:35pm"
+					if( strpos($holiday_title, 'Candles:') !== false || strpos($holiday_title, 'Candle:') !== false){
+						$title_arr = explode(":", $holiday_title);
+						
+						$holiday_title = $title_arr[0].":".$title_arr[1];
+						
+					}
+					
+					return $holiday_title;
+	
+				}else{
+					// keep looking.
+				}
+	
+	
+			}
+		}
+	
+	
+	}
+	
+	
+	
+	
+	
+	
+	private static function getRemoteHebCalDataByYear(&$year_parm ){
+	
+		// Documentation for HebCal.com REST API: https://www.hebcal.com/home/195/jewish-calendar-rest-api
+		$geo_api_query_string = "&geo=none"; 
+		
+		// Check default country of Drupal.
+		$tmp_country = variable_get( 'site_default_country' );
+		if( $tmp_country == "IL" ){
+			$in_israel_setting = true;
+			$tmp_in_israel = "on";
+		}else{
+			$in_israel_setting =  false;  
+			$tmp_in_israel = "off";
+			// HebCal.com API:	'off' = diaspora
+		}	
+	
+		if(strlen($year_parm) == 4  ){
+				
+			// Mutually exclusive language parameter for HebCal API:
+	
+		//	 lg=s – Sephardic transliterations (default if unspecified)
+		//	 lg=sh – Sephardic translit. + Hebrew
+		//	 lg=a – Ashkenazis transliterations
+		//	 lg=ah – Ashkenazis translit. + Hebrew
+		//	 lg=h – Hebrew only
+			
+			$language_api_parm = "s"; // Uses the modern Hebrew transliteration, ie 'parashat'.   'a' and 'ah' uses the older, Yiddish-style ie 'parashas' which is rarely used.
+			 
+		 	 // get time zone things from admin params
+			$timezone =   variable_get( 'date_default_timezone'  ); // "America/New_York";
+			
+			$latitude =  variable_get( 'calendar_candlelighting_latitude'  );  // "28.095656";
+			$longitude = variable_get( 'calendar_candlelighting_longitude' );  // "-82.730689"; 
+			
+			$geotype = variable_get('calendar_candlelighting_geotype');
+			
+			
+			// latitude=[-90 to 90]
+			// longitude=[-180 to 180]
+			if( $geotype <> "usezip" ){
+				if( strlen($latitude ) == 0 || strlen($longitude ) == 0){
+					$candles_parm = "off";
+					$geo_api_query_string = "&geo=none";
+				}else{
+					// check if numbers are within range.
+					if( $latitude >= -90 && $latitude <= 90  && $longitude >= -180 && $longitude <= 180 && strlen($timezone) > 0 ){
+						$candles_parm = "on";
+						$geo_api_query_string = "&geo=pos&latitude=".$latitude."&longitude=".$longitude."&tzid=".$timezone;
+					}else{
+						$candles_parm = "off";
+						$geo_api_query_string = "&geo=none"; 
+					}
+				}
+			}else{
+				// use ZIP code 
+				$zip_code_raw = variable_get('calendar_candlelighting_us_zipcode');
+				
+				$zip_code_5 = substr( $zip_code_raw, 0 , 5 );
+				if( strlen( $zip_code_5) == 5 && is_numeric($zip_code_5)){
+					$candles_parm = "on";
+					$geo_api_query_string = "&geo=zip&zip=".$zip_code_5;
+					
+				}else{
+					$candles_parm = "off";
+					$geo_api_query_string = "&geo=none";
+				}
+				
+			}
+			
+		
+			
+			// 
+			
+	
+			// Get Major holidays?
+			if( variable_get('calendar_add_jewish_holidays_major') <> "0"){
+				$maj_holidays = "on";
+				
+			}else{
+				$maj_holidays = "off";
+			}
+			
+			// Get Minor holidays?
+			if( variable_get('calendar_add_jewish_holidays_minor') <> "0"){
+				$min_holidays = "on";
+			
+			}else{
+				$min_holidays = "off";
+			}
+			
+			// get minor fast days?
+			if( variable_get('calendar_add_jewish_holidays_minorfasts') <> "0"){
+				$minorfasts = "on";
+					
+			}else{
+				$minorfasts = "off";
+			}
+			
+			// get special shabbatot?
+			if( variable_get('calendar_add_jewish_holidays_specialshabbatot') <> "0"){
+				$special_shabbatot = "on";
+					
+			}else{
+				$special_shabbatot = "off";
+			}
+			
+			if( variable_get('calendar_add_jewish_holidays_roshhodesh') <> "0"){
+				$rosh_hodesh = "on";
+			}else{
+				$rosh_hodesh = "off";
+			}
+			
+			$modern_holidays = "on";  // Modern holidays (Yom HaShoah, Yom HaAtzma’ut, …)
+			
+			$shabbat_parasha = "on";
+			
+			$havdalah_minutes_after_sundown = "50"; 
+			
+			$days_of_omar = "on";
+			/*
+			 HebCal API parms:
+			 
+			      m=50 – Havdalah 50 minutes after sundown. Set to m=0 (zero) to disable Havdalah times
+			      b=18 – Candle-lighting time minutes before sunset
+			 D=on – Hebrew date for dates with some event
+			 d=on – Hebrew date for entire date range
+			 o=on – Days of the Omer
+			
+			 */
+			$service_url = "http://www.hebcal.com/hebcal/?v=1&cfg=json".
+					"&maj=".$maj_holidays.
+					"&min=".$min_holidays.
+					"&lg=".$language_api_parm.
+					"&i=".$tmp_in_israel.
+					"&mod=".$modern_holidays.
+					"&nx=".$rosh_hodesh.
+					"&year=".$year_parm.
+					"&month=x".
+					"&d=off".
+					"&D=off".
+					"&o=".$days_of_omar.
+					"&ss=".$special_shabbatot.
+					"&mf=".$minorfasts.
+					"&c=".$candles_parm.
+					"&m=".$havdalah_minutes_after_sundown.
+					"&s=".$shabbat_parasha.
+					$geo_api_query_string;
+			
+					/* 
+					$service_url = "http://www.hebcal.com/hebcal/?v=1&cfg=json&maj=on&min=on&lg=s&i=off&mod=on&nx=on&year=2016&month=x&d=on&D=on&ss=on&mf=on&c=on&m=50&s=on&geo=pos&latitude=28.095656&longitude=-82.730689&tzid=America/New_York;
+		 */
+					$curl = curl_init($service_url);
+					curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+					$curl_response = curl_exec($curl);
+					if ($curl_response === false) {
+						$info = curl_getinfo($curl);
+						curl_close($curl);
+						CRM_Core_Error::debug("Error getting remote hebcal.com data: ", 'error occured during curl exec. Additional info: ' . var_export($info));
+					}
+					curl_close($curl);
+					$decoded = json_decode($curl_response);
+					if (isset($decoded->response->status) && $decoded->response->status == 'ERROR') {
+						CRM_Core_Error::debug("Error getting remote hebcal.com data: " . $decoded->response->errormessage);
+					}
+					//CRM_Core_Error::debug(" $tmp_year Good news, got hebcal.com data: " , 'response ok!');
+					//CRM_Core_Error::debug("$tmp_year Data: ", $decoded);
+					PersonalCalendar::$allRemoteHebCalData[$year_parm] = $decoded->items;
+	
+	
+					//var_export($decoded->response);
+		}else{
+			CRM_Core_Error::debug("Error: missing required parms for either 'year_parm' or 'in_israel_crm_domain_setting' " , "Did not attempt to get anything from hebcal.com API");
+		}
+	
+	
+	
+	}
+	
+	
+	
+	
+	
+	private static function getAllRemoteHebCalData(&$tmp_year){
+	
+		$tmp_rtn = null;
+		if(count( PersonalCalendar::$allRemoteHebCalData) == 0){
+				
+			$years_array = array();
+			$years_array[] = $tmp_year;
+			
+			/*
+			// Use remote hebcal.com API to get needed data for last 4 years, current year, and next 4 years.
+			$years_offsets_arr = array(  -2, -1, 0, 1, 2, 3, 4) ;
+			foreach($years_offsets_arr as $year_offset){
+	
+				$tmp_year = date("Y") + $year_offset;
+				$years_array[] = $tmp_year;
+			}
+				*/
+				
+			foreach($years_array as $tmp_year){
+	
+				PersonalCalendar::getRemoteHebCalDataByYear( $tmp_year );
+			}
+				
+		}
+	
+		$tmp_rtn = PersonalCalendar::$allRemoteHebCalData;
+		return $tmp_rtn;
+	
+	}
+	
+	
 
 function util_get_hebrew_month_name( &$julian_date, &$hebrew_date){
 		/* Use month spellings from HebCal.com for all months.
@@ -100,18 +443,21 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   	$heb_date_str = "<span class='fountaintribe_hebrew_date'></span>";
   }
   
-  
+ 
   if(self::showCalendarOption(self::CANDLE_TIME) ){
-  	 $candle_time_str = "<span class='fountaintribe_candle_time'>".self::get_candle_time($iyear, $imonth, $iday)."</span>";
+  	 $candle_time_str = "<span class='fountaintribe_candle_time'>".self::get_candle_time_formatted($iyear, $imonth, $iday)."</span>";
   }else{
   	$candle_time_str = "<span class='fountaintribe_candle_time'></span>";
   }
   
+  
+  /*
   if(self::showCalendarOption(self::SUNSET_TIME) ){
   	 $sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."</span>";
   }else{
   	$sunset_time_str = "<span class='fountaintribe_candle_time'></span>";
   }
+  */
   
    if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
   	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
@@ -136,10 +482,10 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   		$personal_occasion_full = "<span class='fountaintribe_occasion'></span>";
   	}
   
-  
 
-   $tmpHTMLcell = $heb_date_str.$cell['data'].$personal_occasion_full.
-            $candle_time_str.$sunset_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
+
+   $tmpHTMLcell = $heb_date_str.$cell['data'].$personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
+   //$candle_time_str.$sunset_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
 
    
 
@@ -178,13 +524,15 @@ function getDrupalCalendarMonthCell($row, $cell){
   }
   
   if(self::showCalendarOption(self::CANDLE_TIME) ){
-  	 $candle_time_str = "<span class='fountaintribe_candle_time'>".self::get_candle_time($iyear, $imonth, $iday)."</span>";
+  	 $candle_time_str = "<span class='fountaintribe_candle_time'>".self::get_candle_time_formatted($iyear, $imonth, $iday)."</span>";
   	
   }
+  
+  /*
   if(self::showCalendarOption(self::SUNSET_TIME) ){
   	 $sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."</span>";
   
-  }
+  }*/
   
    if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
   	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
@@ -266,186 +614,25 @@ function getDrupalCalendarWeekCell($day){
 }
 
 /*************************************************************************************************/
-/****  This function is typically called by the FountainTribe version of the Drupal calendar module.  */
-function getDrupalCalendarDayCell($date_parm){
-
-	$tmpHTMLcell = "";
-	 $iyear = '';
-  	$imonth = '';
-  	$iday = ''; 
-
-	list( $iyear, $imonth, $iday) = split('[-]', $date_parm);
-	if(self::showCalendarOption(self::HEBREW_DATE) ){
-  		$heb_date_str = "<span class='fountaintribe_hebrew_date'>".self::get_heb_date($iyear, $imonth, $iday)."<br></span>";
-  }	
-
-   if(self::showCalendarOption(self::SUNSET_TIME) ){
-  	$sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."<br></span>";
-  
-  }
-  
-   if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
-  	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
-  	$jewish_holiday_str = self::get_holiday_name_for_cal($iyear, $imonth, $iday) ; 
-  
-  }
-  
-	if(self::showCalendarOption(self::ROSH_CHODESH) ){
-  		$rosh_hodesh_html_str = self::get_rosh_hodesh_html_str($iyear, $imonth, $iday);
-  	}
-  	
-	$tmpHTMLcell = $heb_date_str.
-	               $jewish_holiday_str.
-	               "<span class='fountaintribe_occasion'>".self::getPersonalOccasionsForCalendar($iyear, $imonth, $iday)."</span>".
-	               $sunset_time_str.$rosh_hodesh_html_str;  
-	return $tmpHTMLcell; 
-
-}
 /*************************************************************************************************/
 function showCalendarOption($cal_option){
 
  	$show_option = false;
- 	
- 	
- 	// TODO: add these preferences to this module's admin area 
- 	
- 	 $display_sunset = "1";
-	    $display_candle = "";
-	   $display_heb_dates = "1";
-	   $display_jewish_holidays_major = "1"; 
-	   $display_rosh_chodesh = "1";
- 	
- 	/*
- 	// Need to make sure to bootstrap CiviCRM since this may be called from a Drupal module. 
- 	global $civicrm_root;
-	
-	if ( file_exists( '../../administrator/components/com_civicrm/' ) ) {
-		// This is a Joomla site. 
-    		$civicrm_root = '../../administrator/components/com_civicrm/civicrm/';
-	} else {
-    		$civicrm_root = $_SERVER["DOCUMENT_ROOT"].'/sites/all/modules/civicrm/';
-	}
-
-
-
-
-       $tmp_config = $civicrm_root.'civicrm.config.php';
-        require_once $tmp_config;
-
-    require_once 'CRM/Core/Config.php';
-    $config =& CRM_Core_Config::singleton( );
-	
-
-    require_once 'CRM/Core/Error.php';
-    
- 	
- 	require_once('utils/util_custom_fields.php');
-
-$custom_field_group_label = "Calendar Preferences";
-$customFieldLabels = array();
-
-$custom_field_zenith_label = "Zenith Used to Calculate Sunset";
-$customFieldLabels[] = $custom_field_zenith_label;
-
-$custom_field_display_sunset_label = "Display Sunset Times" ;
-$customFieldLabels[] = $custom_field_display_sunset_label;
-
-$custom_field_display_candle_label = "Display Candle Lighting Times" ;
-$customFieldLabels[] = $custom_field_display_candle_label;
-
-$custom_field_display_hebrew_dates_label = "Display Hebrew Dates" ;
-$customFieldLabels[] = $custom_field_display_hebrew_dates_label;
-
-$custom_field_display_jewish_holidays_major_label = "Display Jewish Holidays - Major" ;
-$customFieldLabels[] = $custom_field_display_jewish_holidays_major_label;
-
-$custom_field_display_rosh_chodesh_label = "Display Rosh Chodesh" ;
-$customFieldLabels[] = $custom_field_display_rosh_chodesh_label;
-
-$outCustomColumnNames = array();
-
-
-$error_msg = getCustomTableFieldNames($custom_field_group_label, $customFieldLabels, $sql_table_name, $outCustomColumnNames ) ;
-
-
-
-if(strlen( $error_msg) > 0){
-	// print "<br>Configuration error: ".$error_msg;
-	return false;
-
-
-}
-$sql_zenith_field  =  $outCustomColumnNames[$custom_field_zenith_label];
-$sql_display_sunset_field  =  $outCustomColumnNames[$custom_field_display_sunset_label];
-$sql_display_candle_field  =  $outCustomColumnNames[$custom_field_display_candle_label];
-$sql_display_hebrew_dates_field  =  $outCustomColumnNames[$custom_field_display_hebrew_dates_label];
-$sql_display_jewish_holidays_major_field  =  $outCustomColumnNames[$custom_field_display_jewish_holidays_major_label];
-$sql_display_rosh_chodesh_field = $outCustomColumnNames[$custom_field_display_rosh_chodesh_label];
-//
-
-$sql = "Select geo_code_1, geo_code_2, ".$sql_zenith_field." as zenith, ".$sql_display_sunset_field."  as display_sunset,
-	".$sql_display_candle_field."  as display_candle,
-	".$sql_display_hebrew_dates_field." as display_heb_dates, 
-	".$sql_display_jewish_holidays_major_field." as display_jewish_holidays_major,
-	".$sql_display_rosh_chodesh_field." as display_rosh_chodesh
-	from civicrm_contact AS contact_a
-	left join civicrm_address on contact_a.id = civicrm_address.contact_id
-	left join civicrm_state_province on civicrm_address.state_province_id = civicrm_state_province.id
-	left join ".$sql_table_name." as cal_prefs on contact_a.id = cal_prefs.entity_id
-	WHERE
-	contact_a.contact_sub_type =  'Primary_Organization' AND
-	civicrm_address.is_primary = 1
-	order by contact_a.id "; 
-$zenith = '';	
-$dao =& CRM_Core_DAO::executeQuery( $sql,   CRM_Core_DAO::$_nullArray ) ;
-
-	if ( $dao->fetch( ) ) {
-	   $latitude = $dao->geo_code_1;
-	   $longitude = $dao->geo_code_2; 
-	   $zenith = $dao->zenith;
-	   $display_sunset = $dao->display_sunset;
-	    $display_candle = $dao->display_candle;
-	   $display_heb_dates = $dao->display_heb_dates;
-	   $display_jewish_holidays_major = $dao->display_jewish_holidays_major; 
-	   $display_rosh_chodesh = $dao->display_rosh_chodesh;
-	  
-	}else{
-	   $no_data = true; 
-	
-	}
-	
-	
-	$dao->free( );
-	
-	if($no_data){ //print  "<br>Configuration Error: Unknown Calendar Preferences"; 
-	 }  
-	
-	
-	*/
-	if($cal_option == self::SUNSET_TIME ) {
-		if( $display_sunset == '0' ){
-			// Organization does not want sunset times on public calendar. 
-			return false;	
-		}else{
-			return true; 
-		}
-	}
 	
 	if($cal_option == self::CANDLE_TIME ) {
-		if( $display_candle == '0' ){
+		$tmp_var = variable_get('calendar_add_candlelighting');
+		if( $tmp_var == '0' ){
 			// Organization does not want this option on public calendar. 
 			return false;	
-		}else if($display_candle == '1' ){
+		}else{
 			return true; 
 		
-		}else{
-		// Since sunset time is displayed by default, then candlelighting times should be off by default. 
-			return false; 
 		}
 	}
 	
 	if($cal_option == self::HEBREW_DATE ) {
-		if( $display_heb_dates == '0' ){
+		$tmp_var = variable_get('calendar_add_hebrew_date');
+		if( $tmp_var == '0' ){
 			// Organization does not want this option  on public calendar. 
 			return false;	
 		}else{
@@ -455,7 +642,12 @@ $dao =& CRM_Core_DAO::executeQuery( $sql,   CRM_Core_DAO::$_nullArray ) ;
 
 
 	if($cal_option == self::JEWISH_HOLIDAYS ) {
-		if( $display_jewish_holidays_major == '0' ){
+		$tmp_var1 = variable_get('calendar_add_jewish_holidays_major');
+		$tmp_var2 = variable_get('calendar_add_jewish_holidays_minor');
+		$tmp_var3 =	variable_get('calendar_add_jewish_holidays_minorfasts');
+		$tmp_var4 =	variable_get('calendar_add_jewish_holidays_specialshabbatot');
+		//  'site_default_country'
+		if( $tmp_var1 == '0' && $tmp_var2 == '0' && $tmp_var3 == '0' && $tmp_var4 == '0'){
 			// Organization does not want this option  on public calendar. 
 			return false;	
 		}else{
@@ -464,7 +656,9 @@ $dao =& CRM_Core_DAO::executeQuery( $sql,   CRM_Core_DAO::$_nullArray ) ;
 	}
 
 	if($cal_option == self::ROSH_CHODESH ) {
-		if( $display_rosh_chodesh == '0' ){
+		$tmp_var = variable_get( 'calendar_add_jewish_holidays_roshhodesh');
+		
+		if( $tmp_var == '0' ){
 			// Organization does not want this option  on public calendar. 
 			return false;	
 		}else{
@@ -707,51 +901,38 @@ function get_heb_date( $iyear, $imonth, $iday ){
 
 
 
-
-function retrieve_sunset_or_candlelighting_times($iyear, $imonth, $iday, $sunset_or_candle){
+/*
+function XXXretrieve_sunset_or_candlelighting_times($iyear, $imonth, $iday, $sunset_or_candle){
 	return "";
 
 }
+*/
 
 
 function get_jewish_holiday_name($iyear, $imonth, $iday){
-	return "";
-}
-
-
-/*************************************************************************************************/
-/****   */
-function get_sunset_time( $iyear, $imonth, $iday ){
-
- $sunset_time_formated = ""; 
-
 	
-
-    	$sunset_time = $this->retrieve_sunset_or_candlelighting_times($iyear, $imonth, $iday, 'sunset'); 
-   	
-   	
-   if( strlen($sunset_time) > 0){
-   	$sunset_time_formated = ' Sunset:'.$sunset_time ;  
-   }else{
-   	//$candle_time_formated = '<span style="display: hidden">candles:ss:33pm</span>'; 
-   }	
- return $sunset_time_formated;
- 
-
+	$date_tmp = $iyear."-".$imonth."-".$iday;
+	
+	$tmp_holiday_name =   $this->getHolidayByDate( $date_tmp);
+	return $tmp_holiday_name;
 }
+
+
+/*************************************************************************************************/
+
 /*************************************************************************************************/
 /****   */
-function get_candle_time( $iyear, $imonth, $iday ){
+function get_candle_time_formatted( $iyear, $imonth, $iday ){
 
 	$candle_time_formated = ""; 
-    	$candle_time = $this->retrieve_sunset_or_candlelighting_times($iyear, $imonth, $iday, 'candle'); 
-   	
+	$date_tmp = $iyear."-".$imonth."-".$iday;
+    	//$candle_time = $this->retrieve_sunset_or_candlelighting_times($iyear, $imonth, $iday, 'candle'); 
+	$candle_time =  PersonalCalendar::getCandletimeByDate( $date_tmp ) ;
    	
    if( strlen($candle_time) > 0){
-   	$candle_time_formated = ' Candles:'.$candle_time ;  
+   	  $candle_time_formated = ' Candles:'.$candle_time ;  
    }else{
    	
-   	//$candle_time_formated = '<span style="display: hidden">candles:ss:33pm</span>'; 
    }	
  return $candle_time_formated;
  
@@ -764,7 +945,7 @@ function get_holiday_name_for_cal($iyear, $imonth, $iday ){
    
 	
  
-    	$holiday_name = $this->get_jewish_holiday_name($iyear, $imonth, $iday); 
+    $holiday_name = $this->get_jewish_holiday_name($iyear, $imonth, $iday); 
    	
    
    if( strlen($holiday_name) > 0){

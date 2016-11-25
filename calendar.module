@@ -38,6 +38,106 @@ function calendar_admin_settings() {
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#description' => t('Display the Hebrew date on every date on your front-facing calendar'),
     );
+    
+    $form['calendar_add_candlelighting'] = array(
+    '#title' => t('Display the candlelighting times on all Fridays and yom tovim'),
+    '#default_value' => variable_get('calendar_add_candlelighting'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the candlelighting times on all Fridays and major holidays. (Uses Drupal\'s default country and default timezone, which can be updated in Drupal\'s regional settings area.)'),
+    );
+    
+  
+  $tmp_country = variable_get( 'site_default_country' );
+  if( $tmp_country == "US" ){
+  
+  
+      $form['calendar_candlelighting_geotype'] = array(
+    '#title' => t('How do you prefer to configure the location for candlelighting?'),
+    '#default_value' => variable_get('calendar_candlelighting_geotype'),
+    '#type' => 'radios',
+    '#required' => '1',
+    '#options' => array('usezip' => t('Use ZIP code'), 'uselatitudelongitude' => t('Use Longitude and Latitude')),
+    '#description' => t(''),
+    );
+  
+  
+      $form['calendar_candlelighting_us_zipcode'] = array(
+    '#title' => t('ZIP code for calculating candlelighting times'),
+    '#default_value' => variable_get('calendar_candlelighting_us_zipcode'),
+    '#type' => 'textfield',
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('ZIP code (United States only) for calculating candlelighting times'),
+    );
+  
+   $temp_lat_long_description = 'For calculation of candlelighting times. To find this: http://www.latlong.net';
+  
+  }else{
+    $temp_lat_long_description = 'This is required for calculation of candlelighting times. To find this: http://www.latlong.net';
+  }
+  
+  
+  
+     $form['calendar_candlelighting_latitude'] = array(
+    '#title' => t('Latitude for calculating candlelighting times'),
+    '#default_value' => variable_get('calendar_candlelighting_latitude'),
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#maxlength' => 25,
+    '#description' => t($temp_lat_long_description),
+    );
+    
+    $form['calendar_candlelighting_longitude'] = array(
+    '#title' => t('Longitude for calculating candlelighting times'),
+    '#default_value' => variable_get('calendar_candlelighting_longitude'),
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#maxlength' => 25,
+    '#description' => t($temp_lat_long_description),
+    );
+    
+    
+     $form['calendar_add_jewish_holidays_major'] = array(
+    '#title' => t('Display the major Jewish holidays'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_major'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the major Jewish holidays: Yom Kippur, Sukkot, etc.'),
+    );
+    
+     $form['calendar_add_jewish_holidays_minor'] = array(
+    '#title' => t('Display the minor Jewish holidays'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_minor'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the minor Jewish holidays: Tu BiShvat, Lag B\'Omer, etc.'),
+    );
+    
+     $form['calendar_add_jewish_holidays_minorfasts'] = array(
+    '#title' => t('Display the minor Jewish fasts'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_minorfasts'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the minor Jewish fasts: Ta\'anit Esther, Tzom Gedaliah, etc.'),
+    );
+    
+    
+     $form['calendar_add_jewish_holidays_specialshabbatot'] = array(
+    '#title' => t('Display the special shabbatot'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_specialshabbatot'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the special shabbatot: Shabbat Shekalim, Zachor, etc.'),
+    );
+    
+     $form['calendar_add_jewish_holidays_roshhodesh'] = array(
+    '#title' => t('Display Rosh Hodesh'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_roshhodesh'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display Rosh Hodesh'),
+    );
 
   $form['calendar_track_date'] = array(
     '#title' => t('Track current date in session'),
@@ -59,6 +159,9 @@ function calendar_admin_settings() {
 
   return system_settings_form($form);
 }
+
+
+
 
 /**
  * Implements hook_preprocess_date_views_pager().
