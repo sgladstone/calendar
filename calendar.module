@@ -47,6 +47,13 @@ function calendar_admin_settings() {
     '#description' => t('Display the candlelighting times on all Fridays and major holidays. (Uses Drupal\'s default country and default timezone, which can be updated in Drupal\'s regional settings area.)'),
     );
     
+     $form['calendar_add_havdalah'] = array(
+    '#title' => t('Display the havdalah candlelighting time'),
+    '#default_value' => variable_get('calendar_add_havdalah'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the havdalah candlelighting time'),
+    );
   
   $tmp_country = variable_get( 'site_default_country' );
   if( $tmp_country == "US" ){
@@ -145,6 +152,14 @@ function calendar_admin_settings() {
     '#type' => 'radios',
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#description' => t('Display the parasha/Torah portion on Shabbat'),
+    );
+    
+      $form['calendar_add_omar'] = array(
+    '#title' => t('Display the Omar'),
+    '#default_value' => variable_get('calendar_add_omar'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the Omar: 10th day of the Omar, 11 day of the Omar, etc.'),
     );
 
   $form['calendar_track_date'] = array(
