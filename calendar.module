@@ -138,6 +138,14 @@ function calendar_admin_settings() {
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#description' => t('Display Rosh Hodesh'),
     );
+    
+    $form['calendar_add_shabbat_parasha'] = array(
+    '#title' => t('Display the parasha on Shabbat'),
+    '#default_value' => variable_get('calendar_add_shabbat_parasha'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the parasha/Torah portion on Shabbat'),
+    );
 
   $form['calendar_track_date'] = array(
     '#title' => t('Track current date in session'),

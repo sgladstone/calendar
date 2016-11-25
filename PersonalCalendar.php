@@ -7,6 +7,7 @@ class PersonalCalendar{
  const CANDLE_TIME = 'candle_time';
  const JEWISH_HOLIDAYS = 'jewish_holidays';
  const ROSH_CHODESH = 'rosh_chodesh'; 
+ const PARASHA = 'parasha';
  
  const HEBREW_MONTH_TISHREI = "1";
 	const HEBREW_MONTH_HESHVAN = "2";
@@ -150,7 +151,37 @@ class PersonalCalendar{
 	
 	
 	
+	private static function getParashaByDate( &$date_parm){
 	
+		// date returned from HebCal API will include time information when candlelighting parm = on.
+	
+	
+		$year_parm = substr($date_parm, 0, 4 );
+		$tmp_hebcal_data_all_years = PersonalCalendar::getAllRemoteHebCalData($year_parm);
+	
+		if( isset( $tmp_hebcal_data_all_years[$year_parm] ) ){
+			$tmp_hebcal_data = $tmp_hebcal_data_all_years[$year_parm];
+				
+			foreach( $tmp_hebcal_data as $cur ){
+				$hebcal_date_tmp = substr($cur->date, 0, 10);
+	
+				if( $cur->category == "parashat" &&  $hebcal_date_tmp == $date_parm ){
+	
+					$parasha_title = $cur->title;
+					
+		
+					return $parasha_title;
+	
+				}else{
+					// keep looking.
+				}
+	
+	
+			}
+		}
+	
+	
+	}
 	
 	
 	private static function getRemoteHebCalDataByYear(&$year_parm ){
@@ -265,13 +296,20 @@ class PersonalCalendar{
 				$rosh_hodesh = "off";
 			}
 			
-			$modern_holidays = "on";  // Modern holidays (Yom HaShoah, Yom HaAtzma’ut, …)
 			
-			$shabbat_parasha = "on";
+			if(variable_get('calendar_add_shabbat_parasha') <> "0"){
+				$shabbat_parasha = "on";
+			}else{
+				$shabbat_parasha = "off";
+			}
 			
+			// TODO: add config options to display Havdalah or not.
 			$havdalah_minutes_after_sundown = "50"; 
 			
+			// TODO: add config option to display counting of the Omar or not.
 			$days_of_omar = "on";
+
+			$modern_holidays = "on";  // Modern holidays (Yom HaShoah, Yom HaAtzma'ut, etc.)
 			/*
 			 HebCal API parms:
 			 
@@ -451,14 +489,6 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   }
   
   
-  /*
-  if(self::showCalendarOption(self::SUNSET_TIME) ){
-  	 $sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."</span>";
-  }else{
-  	$sunset_time_str = "<span class='fountaintribe_candle_time'></span>";
-  }
-  */
-  
    if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
   	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
   	$jewish_holiday_str = self::get_holiday_name_for_cal($iyear, $imonth, $iday) ; 
@@ -473,8 +503,16 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   		$rosh_hodesh_html_str = "";
   	}
   	
+  	$date_tmp = $iyear."-".$imonth."-".$iday;
+  	
+  	if(self::showCalendarOption(self::PARASHA) ){
+  		$parasha_str = self::getParashaByDate($date_tmp);
+  	}else{
+  		$parasha_str = "";
+  	}
   	
   	$personal_occasion_raw = self::getPersonalOccasionsForCalendar($iyear, $imonth, $iday);
+  	
   	if(isset($personal_occasion_raw ) && strlen($personal_occasion_raw) > 0 ){
   	   $personal_occasion_full = "<span class='fountaintribe_occasion'>".$personal_occasion_raw."</span>";
   	
@@ -484,7 +522,7 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   
 
 
-   $tmpHTMLcell = $heb_date_str.$cell['data'].$personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
+   $tmpHTMLcell = $heb_date_str.$cell['data'].$personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str.$parasha_str  ;
    //$candle_time_str.$sunset_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
 
    
@@ -665,6 +703,19 @@ function showCalendarOption($cal_option){
 			return true; 
 		}
 	}
+	
+	if( $cal_option == self::PARASHA){
+		$tmp_var = variable_get('calendar_add_shabbat_parasha');
+		if( $tmp_var == '0' ){
+			// Organization does not want this option  on public calendar.
+			return false;
+		}else{
+			return true;
+		}
+		
+		
+	}
+		
 	
 	return $show_option;
 }
