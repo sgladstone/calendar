@@ -512,7 +512,7 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   if(self::showCalendarOption(self::HEBREW_DATE) ){
   	$heb_date_str = "<span class='fountaintribe_hebrew_date'>".self::get_heb_date($iyear, $imonth, $iday)."</span>";
   }else{
-  	$heb_date_str = "<span class='fountaintribe_hebrew_date'></span>";
+  	$heb_date_str = ""; //<span class='fountaintribe_hebrew_date'></span>";
   }
   
  
@@ -573,12 +573,12 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   		//$omar_str = "<span class='fountaintribe_omer'>".self::getOmerByDate($date_tmp)."</span>";
   		$omer_raw = self::getOmerByDate($date_tmp);
   		if(strlen($omer_raw) > 0 ){
-  			$omar_str = "<span class='fountaintribe_omer'>".$omer_raw."</span>";
+  			$omer_str = "<span class='fountaintribe_omer'>".$omer_raw."</span>";
   		}else{
-  			$omar_str = "";
+  			$omer_str = "";
   		}
   	}else{
-  		$omar_str = "";
+  		$omer_str = "";
   	}
   	
   	
@@ -604,12 +604,9 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   	}
   
 
-  	$everything_str = $personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str.$parasha_str.$omar_str.$havdalah_time_str  ;
+  	$everything_str = $personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str.$parasha_str.$omer_str.$havdalah_time_str  ;
 
    $tmpHTMLcell = $heb_date_str.$cell['data'].	$everything_str;
-   //$candle_time_str.$sunset_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
-
-   
 
    return $tmpHTMLcell;
 }
@@ -979,8 +976,12 @@ function get_all_yahrzeits_for_contact($cid, $iyear, $imonth, $iday){
 		 try{
 			$result = civicrm_api3('YahrzeitDate', 'get', array(
 					'sequential' => 1,
-					'magicword' => "sesamexx",
+					'year' => $iyear,
+					'month' => $imonth,
+					'day' => $iday,
+					'mourner_contact_ids' => $cid,
 			));
+			
 			
 			if($result['is_error'] <> 0){
 				// API error occured. 
@@ -990,9 +991,11 @@ function get_all_yahrzeits_for_contact($cid, $iyear, $imonth, $iday){
 				$vals = $result['values'];
 				$tmp_allnames_arr = array();
 				foreach($vals as $cur){
-					
-					$tmp_display_name = $cur['name'];
-					$tmp_allnames_arr[] = $tmp_display_name;
+					if( isset($cur['deceased_display_name'])){
+						// ' should we get 'yahrzeit_date' too?
+						$tmp_display_name = $cur['deceased_display_name'];
+						$tmp_allnames_arr[] = $tmp_display_name;
+					}
 					
 				}
 				
@@ -1010,29 +1013,7 @@ function get_all_yahrzeits_for_contact($cid, $iyear, $imonth, $iday){
 		 	// (com.fountaintribe.hebrewcalendarhelper)
 		 }
 		
-		/*
-			// This should be an API provided by the HebrewCalendarHelper extension.
-			$yahrzeit_table_name = "civicrm_fountaintribe_yahrzeits_temp";
-			
-			$sql_str = "SELECT d.display_name as display_name, y.yahrzeit_type 
-							FROM ".$yahrzeit_table_name." y
-							JOIN civicrm_contact d ON y.deceased_contact_id = d.id and d.is_deleted <> 1
-							where y.mourner_contact_id = $cid
-							and month(y.yahrzeit_date)  = $imonth
-							and day(y.yahrzeit_date) = $iday
-							and year(y.yahrzeit_date) = $iyear
-							and y.yahrzeit_type = '0' ";   // 0 = Hebrew observance. 1 = English observance
- 			
-			
-			$dao =& CRM_Core_DAO::executeQuery( $sql_str,   CRM_Core_DAO::$_nullArray ) ;
-			    
-			$tmp_display_name = "";
-			while ( $dao->fetch() ) {
-			      $tmp_display_name = $dao->display_name;        
-			      $tmp_greetings = "Yahrzeit of ".$tmp_display_name ;         
-			 }
-			 $dao->free( ); 
-			*/ 
+		
 	    
 	  }
 	      
