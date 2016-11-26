@@ -877,7 +877,7 @@ ul.calendar-links,
   min-height: 20px;
 }
 
-/* Pogstone changes below  */
+/* FountainTribe changes below  */
 .fountaintribe_hebrew_date {margin: 0px !important; padding: 0px !important; font-size: 9px !important;clear: both; display: block !important; padding-right: 0px !important; text-align: right !important;}
 
 .pogstone_holiday_name {padding-right: 0px !important; text-align: center !important; display: block !important;}
@@ -885,6 +885,15 @@ ul.calendar-links,
 .pogstone_candle_time {display: block; text-align: center !important; padding-right: 0px ! important;}
 
 .pogstone_rosh_chodesh {display: block; text-align: center !important; padding-right: 0px ! important;}
+
+.fountaintribe_candle_time {padding-right: 0px !important; text-align: right !important; display: block !important;}
+
+.fountaintribe_havdalah_time {padding-right: 0px !important; text-align: right !important; display: block !important;}
+
+.fountaintribe_omer{padding-right: 0px !important; text-align: center !important; display: block !important;}
+
+.fountaintribe_holiday_name{padding-right: 0px !important; text-align: right !important; display: block !important;}
+
 
 .calendar-calendar DIV .day
 {
