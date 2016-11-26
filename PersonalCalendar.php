@@ -1061,23 +1061,25 @@ function get_rosh_hodesh_name($iyear, $imonth, $iday){
 	$heb_day = $heb_date_array[1];
 	$heb_year = $heb_date_array[2];
 	
-	if($heb_month <> "1"){
-		if($heb_day == "1"){
-			$julian_date = gregoriantojd($imonth,$iday,$iyear);
-			$month_name = self::util_get_hebrew_month_name( $julian_date, $heb_date);
-	    		$tmp_name = "Rosh Hodesh ".$month_name ;
 	
 	
-		}else if( $heb_day == "30"){
-			// TODO: Need to advance Jullian date to the next day. 
-			// TODO: Need to advance Hebrew date to the next day. 
-			$tmp_name = "Rosh Hodesh ".$month_name ;
-	
-		}else{
-			$tmp_name = "";
-	
-		}
+	if($heb_day == "1"  && $heb_month <> "1"  ){
+		// Its the 1st day of the Hebrew month AND its NOT Tishrei ( ie its not Rosh Hashanah) 
+		$julian_date = gregoriantojd($imonth,$iday,$iyear);
+		$month_name = self::util_get_hebrew_month_name( $julian_date, $heb_date);
+    		$tmp_name = "Rosh Hodesh ".$month_name ;
+
+
+	}else if( $heb_day == "30"){
+		// TODO: Need to advance Jullian date to the next day. 
+		// TODO: Need to advance Hebrew date to the next day. 
+		$tmp_name = "Rosh Hodesh ".$month_name ;
+
+	}else{
+		$tmp_name = ""; 
+
 	}
+	
 	
 	return $tmp_name;
 
