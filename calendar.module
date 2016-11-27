@@ -121,6 +121,15 @@ function calendar_admin_settings() {
     '#description' => t('Display the minor Jewish holidays: Tu BiShvat, Lag B\'Omer, etc.'),
     );
     
+    
+     $form['calendar_add_jewish_holidays_modern'] = array(
+    '#title' => t('Display the modern Jewish holidays'),
+    '#default_value' => variable_get('calendar_add_jewish_holidays_modern'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display the modern Jewish holidays: Yom HaShoah, Yom HaAtzma\'ut, etc.'),
+    );
+    
      $form['calendar_add_jewish_holidays_minorfasts'] = array(
     '#title' => t('Display the minor Jewish fasts'),
     '#default_value' => variable_get('calendar_add_jewish_holidays_minorfasts'),
@@ -160,6 +169,14 @@ function calendar_admin_settings() {
     '#type' => 'radios',
     '#options' => array(0 => t('No'), 1 => t('Yes')),
     '#description' => t('Display the Omer: 10th day of the Omer, 11 day of the Omer, etc.'),
+    );
+    
+       $form['calendar_add_daf_yomi'] = array(
+    '#title' => t('Display Daf Yomi'),
+    '#default_value' => variable_get('calendar_add_daf_yomi'),
+    '#type' => 'radios',
+    '#options' => array(0 => t('No'), 1 => t('Yes')),
+    '#description' => t('Display Daf Yomi on each date'),
     );
 
   $form['calendar_track_date'] = array(

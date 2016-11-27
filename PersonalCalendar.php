@@ -2,6 +2,7 @@
 
 class PersonalCalendar{
 
+	// items that are configurable by the admin user, ie they can be displayed or not.
  const HEBREW_DATE = 'hebrew_date';
  const CANDLE_TIME = 'candle_time';
  const JEWISH_HOLIDAYS = 'jewish_holidays';
@@ -9,7 +10,10 @@ class PersonalCalendar{
  const PARASHA = 'parasha';
  const HAVDALAH_TIME = "havdalah_time";
  const OMER = "omer";
+ const DAF_YOMI = "daf_yomi";
  
+ 
+ // Hebrew months. 
  const HEBREW_MONTH_TISHREI = "1";
 	const HEBREW_MONTH_HESHVAN = "2";
 	const HEBREW_MONTH_KISLEV = "3";
@@ -25,6 +29,37 @@ class PersonalCalendar{
 	const HEBREW_MONTH_ELUL  = "13";
 	
 	static private $allRemoteHebCalData = array();  // data from the http://hebcal.com API.
+	
+	// 
+	private static function getDafYomiByDate( &$date_parm ){
+	
+		// {"date":"2016-11-02","title":"Daf Yomi: Baba Metzia 37","link":"http://www.sefaria.org/Bava_Metzia.37a","category":"dafyomi"}
+		$year_parm = substr($date_parm, 0, 4 );
+		$tmp_hebcal_data_all_years = PersonalCalendar::getAllRemoteHebCalData($year_parm);
+		
+		if( isset( $tmp_hebcal_data_all_years[$year_parm] ) ){
+			$tmp_hebcal_data = $tmp_hebcal_data_all_years[$year_parm];
+				
+			foreach( $tmp_hebcal_data as $cur ){
+				$hebcal_date_tmp = substr($cur->date, 0, 10);
+		
+				if( $cur->category == "dafyomi" &&  $hebcal_date_tmp == $date_parm ){
+		
+					$omer_title = $cur->title;
+					$omer_date = $cur->date;
+						
+					return $omer_title;
+		
+				}else{
+					// keep looking.
+				}
+		
+		
+			}
+		}
+		
+	}
+	
 	
 	private static function getHavdalahtimeByDate( &$date_parm ){
 		$year_parm = substr($date_parm, 0, 4 );
@@ -334,14 +369,25 @@ class PersonalCalendar{
 				$days_of_omer = "off";
 			}
 
-			$modern_holidays = "on";  // Modern holidays (Yom HaShoah, Yom HaAtzma'ut, etc.)
+			// Daf Yomi is turned off be default, as this is considered uncommon to want this on a calendar. 
+			if( variable_get('calendar_add_daf_yomi') == "1"){
+				$daf_yomi = "on";
+			}else{
+				$daf_yomi = "off";
+			}
+			
+			
+			// Modern holidays (Yom HaShoah, Yom HaAtzma'ut, etc.)
+			if( variable_get('calendar_add_jewish_holidays_modern') <> "0"){
+				$modern_holidays = "on";
+			}else{
+				$modern_holidays = "off";
+			}
 			
 			/*
 			 Unused HebCal API parms:   
 			 D=on – Hebrew date for dates with some event
 			 d=on – Hebrew date for entire date range
-			 ??  = Daf Yomi
-			
 			 */
 			
 			/*
@@ -368,6 +414,7 @@ Israel holiday schedule
 					"&month=x".
 					"&d=off".
 					"&D=off".
+					"&F=".$daf_yomi.
 					"&o=".$days_of_omer.
 					"&ss=".$special_shabbatot.
 					"&mf=".$minorfasts.
@@ -442,9 +489,8 @@ Israel holiday schedule
 /*************************************************************************************************/
 /****   */
 function util_get_hebrew_month_name( &$julian_date, &$hebrew_date){
-		/* Use month spellings from HebCal.com for all months.
-		
-            */	
+		/* Use spellings from HebCal.com for all months */	
+	
 		list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrew_date);
 		if($hebrewMonth == $this::HEBREW_MONTH_TISHREI){
 			return ts("Tishrei");	
@@ -581,6 +627,17 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   		$omer_str = "";
   	}
   	
+  // daf_yomi
+  	if(self::showCalendarOption(self::DAF_YOMI) ){
+  		$daf_yomi_raw = self::getDafYomiByDate($date_tmp);
+  		if(strlen($daf_yomi_raw) > 0 ){
+  			$daf_yomi_str = "<span class='fountaintribe_dafyomi'>".$daf_yomi_raw."</span>";
+  		}else{
+  			$daf_yomi_str = "";
+  		}
+  	}else{
+  		$daf_yomi_str = "";
+  	}
   	
   
   	if(self::showCalendarOption(self::PARASHA) ){
@@ -604,7 +661,7 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   	}
   
 
-  	$everything_str = $personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str.$parasha_str.$omer_str.$havdalah_time_str  ;
+  	$everything_str = $personal_occasion_full.$candle_time_str.$jewish_holiday_str.$rosh_hodesh_html_str.$parasha_str.$omer_str.$daf_yomi_str.$havdalah_time_str  ;
 
    $tmpHTMLcell = $heb_date_str.$cell['data'].	$everything_str;
 
@@ -614,7 +671,7 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
 
 /************************************************************************************************/
 /***  This function is typically called by the FountainTribe version of the Drupal6 calendar module.  */
-function getDrupalCalendarMonthCell($row, $cell){
+function XXXgetDrupalCalendarMonthCell($row, $cell){
   
   
   $raw_date = $cell['id']; 
@@ -675,7 +732,7 @@ function getDrupalCalendarMonthCell($row, $cell){
   	
 /*************************************************************************************************/
 /****   This function is typically called by the FountainTribe version of the Drupal calendar module. */
-function getDrupalCalendarWeekCell($day){
+function XXXgetDrupalCalendarWeekCell($day){
 
   $tmpHTMLcell = "";
   $iyear = '';
@@ -789,6 +846,15 @@ function showCalendarOption($cal_option){
 		}else{
 			return true;
 		}
+	}else if($cal_option == self::DAF_YOMI){
+		$tmp_var = variable_get('calendar_add_daf_yomi');
+		if( $tmp_var == '0' ){
+			// Organization does not want this option  on public calendar.
+			return false;
+		}else{
+			return true;
+		}
+		
 	}
 	
 	return $show_option;
