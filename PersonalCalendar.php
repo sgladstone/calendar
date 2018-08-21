@@ -258,11 +258,11 @@ class PersonalCalendar{
 				
 			// Mutually exclusive language parameter for HebCal API:
 	
-		//	 lg=s – Sephardic transliterations (default if unspecified)
-		//	 lg=sh – Sephardic translit. + Hebrew
-		//	 lg=a – Ashkenazis transliterations
-		//	 lg=ah – Ashkenazis translit. + Hebrew
-		//	 lg=h – Hebrew only
+		//	 lg=s â€“ Sephardic transliterations (default if unspecified)
+		//	 lg=sh â€“ Sephardic translit. + Hebrew
+		//	 lg=a â€“ Ashkenazis transliterations
+		//	 lg=ah â€“ Ashkenazis translit. + Hebrew
+		//	 lg=h â€“ Hebrew only
 			
 			$language_api_parm = "s"; // Uses the modern Hebrew transliteration, ie 'parashat'.   'a' and 'ah' uses the older, Yiddish-style ie 'parashas' which is rarely used.
 			 
@@ -386,8 +386,8 @@ class PersonalCalendar{
 			
 			/*
 			 Unused HebCal API parms:   
-			 D=on – Hebrew date for dates with some event
-			 d=on – Hebrew date for entire date range
+			 D=on â€“ Hebrew date for dates with some event
+			 d=on â€“ Hebrew date for entire date range
 			 */
 			
 			/*
@@ -403,7 +403,7 @@ Weekly Torah portion on Saturdays
 Diaspora holiday schedule
 Israel holiday schedule
 			 */
-			$service_url = "http://www.hebcal.com/hebcal/?v=1&cfg=json".
+			$service_url = "https://www.hebcal.com/hebcal/?v=1&cfg=json".
 					"&maj=".$maj_holidays.
 					"&min=".$min_holidays.
 					"&lg=".$language_api_parm.
@@ -870,7 +870,7 @@ function is_hebrew_year_leap_year( $hebrewYear){
 		
   // https://en.wikipedia.org/wiki/Hebrew_calendar
   //  To determine whether year n of the calendar is a leap year, 
-  // find the remainder on dividing [(7 Ã— n) + 1] by 19. 
+  // find the remainder on dividing [(7 Ãƒâ€” n) + 1] by 19. 
   // If the remainder  is 6 or less it is a leap year; if it is 7 or more it is not.
 		
 		$tmp = (7 * $hebrewYear) + 1;
