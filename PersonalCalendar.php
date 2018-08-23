@@ -491,7 +491,7 @@ Israel holiday schedule
 function util_get_hebrew_month_name( &$julian_date, &$hebrew_date){
 		/* Use spellings from HebCal.com for all months */	
 	
-		list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrew_date);
+		list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrew_date);
 		if($hebrewMonth == $this::HEBREW_MONTH_TISHREI){
 			return ts("Tishrei");	
 		}else if($hebrewMonth == $this::HEBREW_MONTH_HESHVAN){
@@ -547,9 +547,9 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
   
   $personal_occasion_raw = ""; 
   
-  // Split out year, month, and date from format used by Drupal monthly calendar. 
-  
-   list($iyear, $imonth, $iday) = split('[-]', $raw_date);
+  // explode out year, month, and date from format used by Drupal monthly calendar. 
+  // was: explode('[-]', $raw_date);
+   list($iyear, $imonth, $iday) = explode('-', $raw_date);
  
    $date_tmp = $iyear."-".$imonth."-".$iday;
   
@@ -668,113 +668,9 @@ function getDrupal7CalendarMonthCell($raw_date, $granularity){
    return $tmpHTMLcell;
 }
 
-
-/************************************************************************************************/
-/***  This function is typically called by the FountainTribe version of the Drupal6 calendar module.  */
-function XXXgetDrupalCalendarMonthCell($row, $cell){
-  
-  
-  $raw_date = $cell['id']; 
-  
-  $iyear = '';
-  $imonth = '';
-  $iday = ''; 
-  
-  // Split out year, month, and date from format used by Drupal monthly calendar. 
-  if (ereg("^civicrm_events-weekno", $raw_date )){
-     $tmpHTMLcell = '';
-     return $tmpHTMLcell;
- }else if(ereg("^calendar-", $date_parm)){
- 
-      	list($a, $iyear, $imonth, $iday) = split('[-]', $raw_date);
- }else{
-   	list($a , $iyear, $imonth, $iday) = split('[-]', $raw_date);
-   }	
-  
-  
-  $tmpHTMLcell = "";
-   
-  
-  if(self::showCalendarOption(self::HEBREW_DATE) ){
-  	$heb_date_str = "<span class='fountaintribe_hebrew_date'>".self::get_heb_date($iyear, $imonth, $iday)."</span>";
-  }
-  
-  if(self::showCalendarOption(self::CANDLE_TIME) ){
-  	 $candle_time_str = "<span class='fountaintribe_candle_time'>".self::get_candle_time_formatted($iyear, $imonth, $iday)."</span>";
-  	
-  }
-  
-  /*
-  if(self::showCalendarOption(self::SUNSET_TIME) ){
-  	 $sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."</span>";
-  
-  }*/
-  
-   if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
-  	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
-  	$jewish_holiday_str = self::get_holiday_name_for_cal($iyear, $imonth, $iday) ; 
-  
-  }
-  
-  	if(self::showCalendarOption(self::ROSH_CHODESH) ){
-  		$rosh_hodesh_html_str = self::get_rosh_hodesh_html_str($iyear, $imonth, $iday);
-  	}
-  
-  $tmpHTMLcell = $heb_date_str.$cell['data'].
-           "<span class='fountaintribe_occasion'>".self::getPersonalOccasionsForCalendar($iyear, $imonth, $iday)."</span>".
-            $candle_time_str.$sunset_time_str.$jewish_holiday_str.$rosh_hodesh_html_str  ;
-
-
-   return $tmpHTMLcell;
-}
-
-
   	
 /*************************************************************************************************/
-/****   This function is typically called by the FountainTribe version of the Drupal calendar module. */
-function XXXgetDrupalCalendarWeekCell($day){
 
-  $tmpHTMLcell = "";
-  $iyear = '';
-  $imonth = '';
-  $iday = ''; 
-  
-  $raw_date = $day['date']; 
-  list( $iyear, $imonth, $iday) = split('[-]', $raw_date);
-
-  if(self::showCalendarOption(self::HEBREW_DATE) ){
-  	 $heb_date_str = "<span class='fountaintribe_hebrew_date'>".self::get_heb_date($iyear, $imonth, $iday)."</span>";
-  }	
-
-   if(self::showCalendarOption(self::SUNSET_TIME) ){
-  	 $sunset_time_str = "<span class='fountaintribe_candle_time'>".self::get_sunset_time($iyear, $imonth, $iday)."</span>";
-  
-  }
-  
-   if(self::showCalendarOption(self::JEWISH_HOLIDAYS) ){
-  	// TODO: include span tag for Jewish holidays in this function, do not rely on other function to do it. 
-  	 $jewish_holiday_str ="<br>".self::get_holiday_name_for_cal($iyear, $imonth, $iday) ; 
-  
-  }
-
-
-	if(self::showCalendarOption(self::ROSH_CHODESH) ){
-  		$rosh_hodesh_html_str = self::get_rosh_hodesh_html_str($iyear, $imonth, $iday);
-  	}
-  	
-
-	//define("foo", "bar"); 
-	//if (empty(foo)) echo "empty";
- $tmpHTMLcell = $heb_date_str.$day['datebox'].
-                "<br>".$jewish_holiday_str.
-                "<br><span class='fountaintribe_occasion'>".self::getPersonalOccasionsForCalendar($iyear, $imonth, $iday)."</span>".
-                $sunset_time_str.$rosh_hodesh_html_str   ;
-                
-
- return $tmpHTMLcell;
- 
- 
-}
 
 /*************************************************************************************************/
 /*************************************************************************************************/
@@ -1214,27 +1110,27 @@ $jdDate = gregoriantojd($gregorianMonth,$gregorianDay,$gregorianYear);
 
 if($hebrewformat == 'mm/dd/yy'){
 	$hebrewDate = jdtojewish($jdDate);
-	list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrewDate);
+	list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrewDate);
 	$hebrew_date_formated = "$hebrewMonth/$hebrewDay/$hebrewYear"; 
 }else if($hebrewformat == 'dd MM yy sunset'){
 	$hebrewDate = jdtojewish($jdDate);
-	list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrewDate);
+	list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrewDate);
 	$hebrewMonthName = self::util_get_hebrew_month_name($jdDate, $hebrewDate);
 	$hebrew_date_formated = "$hebrewDay  $hebrewMonthName  $hebrewYear $sunset_info_formated";
 }else if($hebrewformat == 'dd MM yy' || $hebrewformat == 'dd_MM_yy'){
 	$hebrewDate = jdtojewish($jdDate);
-	list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrewDate);
+	list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrewDate);
 	$hebrewMonthName = self::util_get_hebrew_month_name($jdDate, $hebrewDate);
 	$hebrew_date_formated = "$hebrewDay $hebrewMonthName $hebrewYear";
 }else if($hebrewformat == 'dd MM' || $hebrewformat == 'dd_MM'  ){
 	$hebrewDate = jdtojewish($jdDate);
-	list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrewDate);
+	list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrewDate);
 	$hebrewMonthName = self::util_get_hebrew_month_name($jdDate, $hebrewDate);
 	$hebrew_date_formated = "$hebrewDay $hebrewMonthName";
 
 }else if($hebrewformat == 'yy'){
 	$hebrewDate = jdtojewish($jdDate);
-	list($hebrewMonth, $hebrewDay, $hebrewYear) = split('/',$hebrewDate);
+	list($hebrewMonth, $hebrewDay, $hebrewYear) = explode('/',$hebrewDate);
 	$hebrew_date_formated  = "$hebrewYear";
 }else if($hebrewformat == 'hebrew'){
 	$hebrew_date_formated =  mb_convert_encoding( jdtojewish( $jdDate, true ), "UTF-8", "ISO-8859-8"); 
